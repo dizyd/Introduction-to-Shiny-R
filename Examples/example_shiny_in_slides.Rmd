@@ -1,0 +1,52 @@
+---
+title: "Example Presentation with Shiny Elements"
+author: "David Izydorczyk"
+date: "`r Sys.Date()`"
+output: 
+  ioslides_presentation: 
+    smaller: yes
+    widescreen: yes
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+
+
+## Start
+
+```{r sim1}
+
+# Here you can insert your input elements (slider,numeric,text,dropdown etc)
+
+inputPanel(
+  numericInput("Mean"  , label = "Mean" ,value = 0),
+  numericInput("SD"    , label = "SD"   ,value = 1),
+  numericInput("N"     , label = "N"    ,value = 100)
+)
+
+
+# Now you can make your interactive plot
+# This functionblock gets executed everytime one of the input changes
+
+renderPlot({
+
+  m   <- input$Mean
+  sd  <- input$SD
+  N   <- input$N
+
+
+rnorm(N,m,sd) %>% as.data.frame %>% 
+ ggplot(aes(x=.)) +
+  geom_histogram(aes(y=..density..)) +
+  geom_density(aes(y=..density..),fill="tomato1",alpha=0.4) +
+  theme_bw()
+    
+})
+```

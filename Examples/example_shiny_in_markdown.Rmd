@@ -1,0 +1,401 @@
+---
+title: "Seminar Neuro - Modelfit"
+author: "28.03.2017"
+date: "30 April 2017"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Modelfit
+## Daten 
+
+```{r experiment}
+values <- reactiveValues()
+```
+
+
+```{r df, echo=FALSE}
+
+df1 = data.frame(Gewinn_Jetzt=rep(c(200,150,100,80,30,10),5),
+                 Gewinn_Spaeter=rep(200,30),
+                 delay_Wochen=rep(c(2,4,8,16,32),each=6))
+
+
+values$delay <- unique(df1$delay_Wochen)
+
+# DT::renderDataTable(DT::datatable(
+#   df1, options = list(searching = FALSE, 
+#                          paging = FALSE)
+# ))
+```
+
+copy&paster  80,100,120,140,180
+
+```{r inputName}
+inputPanel(
+textInput("namePerson1", "Person 1", value = "Person 1"),
+textInput("namePerson2", "Person 2", value = "Person 2")
+)
+```
+
+```{r inputExp}
+
+observe({
+  n1          <- input$namePerson1
+  updateTextInput(session,"inputExp1", n1, value = "")
+  
+  
+  n2         <- input$namePerson2
+  updateTextInput(session,"inputExp2", n2, value = "")
+ 
+})
+
+
+inputPanel(
+  textInput("inputExp1", "Person1", value = ""),
+  textInput("inputExp2", "Person2", value = "")
+)
+```
+
+##  Plot:Indifferenzpunkte ~ Delay
+
+
+
+```{r plot raw values}
+
+#   
+#   indPointP1 <- as.numeric(unlist(strsplit(input$inputExp1, ",")))
+#   indPointP2 <- as.numeric(unlist(strsplit(input$inputExp2, ","))) 
+#   
+#   
+#   
+
+renderPlot({
+  
+  values$indPointP1 <- as.numeric(unlist(strsplit(input$inputExp1, ",")))
+  values$indPointP2 <- as.numeric(unlist(strsplit(input$inputExp2, ","))) 
+  
+  
+ 
+  par(mfrow=c(1,2))
+  plot(values$indPointP1~values$delay,
+       ylab="Wert Indifferenzpunkte",xlab="Delay in Wochen",main=input$namePerson1,cex.lab=1.3,cex = 2.5,pch=16)
+  
+  plot(values$indPointP2~values$delay,
+       ylab="Wert Indifferenzpunkte",xlab="Delay in Wochen",main=input$namePerson2,cex.lab=1.3,cex = 2.5,pch=16)
+  
+})
+
+
+```
+
+## Modelfit
+### Bestimmung der Funktion 
+
+Hier verwenden wir die die hyperbolische Funktion mit der Funktionsgleichung:
+$I=\frac{A}{(1+k*D)}$ wobei $I$ =  der  Wert des Indifferenzpunktes f?r den Betrag $A$ nach einer Zeit von $D$ ist. 
+
+Beispiel:
+
+Code:
+
+```{r, eval=FALSE, echo=TRUE}
+
+ hyperbolic<- function(D,A,k){
+      A/(1+k*D)
+    }
+    
+    plot(y ~ x,cex = 2.5,pch=16)
+    curve(hyperbolic(x,1000,0.2),add=TRUE,col="red",lwd=5)
+```
+
+Wie sieht funktion aus, wenn sich k zu 0.3 oder 0.01 ?ndert?
+
+```{r}
+numericInput("k", "k:", 0.2)
+
+hyperbolic<- function(D,A,k){
+      A/(1+k*D)
+    }
+
+renderPlot({
+    x  <- c(1,2,4,25,52,156,520)
+    y  <- c(750,700,450,250,100,60,60)
+    
+    
+    plot(y ~ x,cex = 2.5,pch=16)
+    curve(hyperbolic(x,1000,input$k),add=TRUE,col="red",lwd=5)
+ })
+```
+
+
+## Bestimmt der likelihood f?r einen bestimmten Parameter Wert
+
+```{r}
+h.loss <- function(par,x,y) {
+  
+  k.par     <-  par[1] 
+  err.sigma <-  par[2]  
+  
+# If the error standard deviation is invalid (i.e.; negative), then we need to return a very high deviance
+  
+# This will tell the optimization procedure to stay away from invalid (either statistically or psychologically) parameter values.
+  
+  if(err.sigma < 0) {deviance <- 10000000}
+  
+  # If the error standard deviation is valid (i.e.; > 0), then calculate the deviance...
+  
+  if(err.sigma > 0) {
+    
+    # Calculate the likelihood of each data point.
+    # Here is where you specify the model and how you calculate likelihoods.
+    
+    likelihoods <- dnorm(y, mean = hyperbolic(x,1000,k.par), sd = err.sigma)
+    
+    # Now let's convert the vector of likelihoods to a summary deviance score (-2 times sub log-lik)
+    
+    # Calculate log-likelihoods of each data point
+    log.likelihoods <- log(likelihoods)
+    
+    # Calculate the deviance (-2 times sum of log-likelihoods)
+    deviance <- -2 * sum(log.likelihoods)
+    
+  }
+  
+  return(deviance)
+  
+}
+```
+
+Beispiel - Daten:
+
+    Delay  <- c(1,2,4,25,52,156,520)
+    Indifferenzwert  <- c(750,700,450,250,100,60,60)
+    k=0.2
+
+F?r den ersten Datenpunkt w?re die likelihood dann:
+
+```{r, eval=FALSE, echo=TRUE}
+likelihood <- dnorm(750, mean = hyperbolic(1,1000,0.2), sd = 10)
+```
+
+```{r}
+
+    x  <- c(1,2,4,25,52,156,520)
+    y  <- c(750,700,450,250,100,60,60)
+    
+    
+(likelihoods <- dnorm(750, mean = hyperbolic(1,1000,0.2), sd = 58))
+```
+
+und f?r alle:
+
+```{r}
+
+
+    x  <- c(1,2,4,25,52,156,520)
+    y  <- c(750,700,450,250,100,60,60)
+    
+    
+likelihoods <- dnorm(y, mean = hyperbolic(x,1000,0.2), sd = 58)
+
+plot(likelihoods~x,ylab="Likelihoods",xlab="Delay",cex.lab=1.2,ylim=c(-1,1),col="red",lwd=2,cex = 2.5,pch=16)
+```
+
+
+Deswegen verwendet man die log(LL):
+
+```{r}
+plot(log(likelihoods)~x,ylab="Likelihoods",xlab="Delay",cex.lab=1.2,col="red",lwd=2)
+```
+
+
+Nun summiert man die log-LL Werte zusammen und erh?lt so die log(LL) oder die Devianz = -2*log(LL) f?r den k=0.2
+
+```{r}
+sum(log(likelihoods))
+sum(log(likelihoods))*-2
+```
+
+## Optimierung
+
+Jetzt setzt man iterativ verschieden Werte f?r k ein und bestimmt den Wert mit der h?chsten log(LL):
+
+```{r}
+sliderInput("k2", "k:", min = 0.01, max = 1, value = 0.01, step= 0.05,
+            animate = animationOptions(interval=1000))
+
+renderPlot({
+
+ 
+    x  <- c(1,2,4,25,52,156,520)
+    y  <- c(750,700,450,250,100,60,60)
+    
+    
+likelihoods <- dnorm(y, mean = hyperbolic(x,1000,input$k2), sd = 58)
+
+
+
+plot(1, type="n" ,ylab="log(LL)",xlab="k",cex.lab=1.2,xlim=c(0, 1), ylim=c(-500,0))
+points(y=h.loss(c(input$k2,58),x,y)*-2,x=input$k2,col="red",lwd=5)
+
+})
+
+dev.temp <- c()
+
+
+for(i in 1:length(seq(0.01,1,0.03))){
+  dev.temp[i] <- h.loss(c(seq(0.01,1,0.03)[i],58),x,y)*-2
+}
+
+
+plot(1, type="n" ,ylab="log(LL)",xlab="k",cex.lab=1.2,xlim=c(0, 1), ylim=c(-500,0))
+for(i in seq(0.01,1,0.03)){
+  dev.temp1 <- h.loss(c(i,58),x,y)*-2
+  points(x=i,y=dev.temp1)
+  
+}
+
+
+abline(v = seq(0.01,1,0.03)[dev.temp==max(dev.temp)])
+
+
+
+
+
+```
+
+
+## Sch?tzung von k f?r unsere Daten
+
+
+```{r}
+
+renderText({
+  
+  #x <- c(2,4,8,16,32)
+  #y <- c(150,100,60,60,30)
+  
+  h.loss1 <- function(par) {
+  
+  k.par     <-  par[1] 
+  err.sigma <-  par[2]  
+  
+# If the error standard deviation is invalid (i.e.; negative), then we need to return a very high deviance
+  
+# This will tell the optimization procedure to stay away from invalid (either statistically or psychologically) parameter values.
+  
+  if(err.sigma < 0) {deviance <- 10000000}
+  
+  # If the error standard deviation is valid (i.e.; > 0), then calculate the deviance...
+  
+  if(err.sigma > 0) {
+    
+    # Calculate the likelihood of each data point.
+    # Here is where you specify the model and how you calculate likelihoods.
+    
+    likelihoods <- dnorm(values$indPointP1, mean = hyperbolic(values$delay,200,k.par), sd = err.sigma)
+    
+    # Now let's convert the vector of likelihoods to a summary deviance score (-2 times sub log-lik)
+    
+    # Calculate log-likelihoods of each data point
+    log.likelihoods <- log(likelihoods)
+    
+    # Calculate the deviance (-2 times sum of log-likelihoods)
+    deviance <- -2 * sum(log.likelihoods)
+    
+  }
+  
+  return(deviance)
+  
+  }
+  
+  
+
+  
+  
+  parameter.fitsP1 <- optim(par = c(0.5, 100),
+                          fn = h.loss1,
+                          hessian = T
+)
+  
+values$kP1 <- parameter.fitsP1$par[1]
+
+  
+})
+
+
+
+```
+
+```{r}
+
+renderText({
+h.loss2 <- function(par) {
+  
+  k.par     <-  par[1] 
+  err.sigma <-  par[2]  
+  
+# If the error standard deviation is invalid (i.e.; negative), then we need to return a very high deviance
+  
+# This will tell the optimization procedure to stay away from invalid (either statistically or psychologically) parameter values.
+  
+  if(err.sigma < 0) {deviance <- 10000000}
+  
+  # If the error standard deviation is valid (i.e.; > 0), then calculate the deviance...
+  
+  if(err.sigma > 0) {
+    
+    # Calculate the likelihood of each data point.
+    # Here is where you specify the model and how you calculate likelihoods.
+    
+    likelihoods <- dnorm(values$indPointP2, mean = hyperbolic(values$delay,200,k.par), sd = err.sigma)
+    
+    # Now let's convert the vector of likelihoods to a summary deviance score (-2 times sub log-lik)
+    
+    # Calculate log-likelihoods of each data point
+    log.likelihoods <- log(likelihoods)
+    
+    # Calculate the deviance (-2 times sum of log-likelihoods)
+    deviance <- -2 * sum(log.likelihoods)
+    
+  }
+  
+  return(deviance)
+  
+}
+
+
+    parameter.fitsP2 <- optim(par = c(0.5, 100),
+                          fn = h.loss2,
+                          hessian = T
+)
+
+values$kP2 <- parameter.fitsP2$par[1]
+    
+    
+   }) 
+```
+
+
+
+```{r}
+renderPlot({ 
+  
+  par(mfrow=c(1,2))
+  x <- values$delay
+
+  plot(values$indPointP1 ~ values$delay,ylim=c(0,200),xlim=c(0,32),ylab="Wert Indifferenzpunkt",xlab="Delay",cex.lab=1.3,cex = 2.5,pch=16)
+  curve(hyperbolic(x,200,values$kP1),add=TRUE,col="red",lwd=5)
+  text(25, 100, values$kP1, cex = 1.8)
+
+  plot(values$indPointP2 ~ values$delay,ylim=c(0,200),xlim=c(0,32),ylab="Wert Indifferenzpunkt",xlab="Delay",cex.lab=1.3,cex = 2.5,pch=16)
+  curve(hyperbolic(x,200,values$kP2),add=TRUE,col="red",lwd=5)
+  text(25, 100, values$kP2, cex = 1.8)
+  })
+```
+
