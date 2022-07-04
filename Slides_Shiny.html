@@ -90,7 +90,7 @@ you can create a shiny application with a default layout
 ---
 ## The structure
 
-A shiny app consits of two parts:
+A shiny app consists of two parts:
 
 - **UI**: The User-Interface  or front-end. Here you define the **layout** of your app, the possible **inputs**, as well as the **placements of outputs**. 
 
@@ -364,7 +364,7 @@ varSelectInput(inputId = "selectVars",
 ]
 
 
-Note that you have to use [tidyeval, non-standard evaluation](https://tidyeval.tidyverse.org/dplyr.html) in tidyverse functions:  `select(!!input$selectVars)`
+Note that you have to use [tidyeval, non-standard evaluation](https://tidyeval.tidyverse.org/dplyr.html) in tidyverse functions:  `select(!!sym(input$selectVars))`
 
 
 &lt;!-- *********** Exercise ************** --&gt;
@@ -557,7 +557,7 @@ Result:
 ## Text
 
 - renderText(): displays text *returned* by the code.
-- renderPrint(): which displays text *printed*  by the code.
+- renderPrint(): displays text *printed*  by the code.
 
 &lt;!-- *********** New Slide ************** --&gt;
 ---
@@ -1128,7 +1128,7 @@ If you have a data.frame (`temp`) with two variables and the results of the `kme
 temp$cluster &lt;-  factor(kmeans$cluster)
     
         
-ggplot(temp,aes_string(x = input$var1, y = input$var2, color = "cluster")) +
+ggplot(temp,aes_string(x = input$var1, y = input$var2, color = cluster)) +
     geom_point() +
     geom_point(data=data.frame(kmeans$centers),
                color = "black",
@@ -1152,7 +1152,7 @@ Publishing your Shiny App
 
 You can deploy your shiny app either by having your own [shiny server](https://rstudio.com/products/shiny/shiny-server/?_ga=2.165307323.56038037.1588581253-1556918011.1538985794) , or by using an external server like [shinyapps.io](https://www.shinyapps.io/?_ga=2.165307323.56038037.1588581253-1556918011.1538985794)
 
-[shinyapps.io](https://www.shinyapps.io/?_ga=2.165307323.56038037.1588581253-1556918011.1538985794) is a platform as a service (PaaS) for hosting Shiny web apps (applications). They also offer a free plan.
+[shinyapps.io](https://www.shinyapps.io/?_ga=2.165307323.56038037.1588581253-1556918011.1538985794) is a platform for hosting Shiny web apps (applications). They also offer a free plan.
 
 To host your shiny app there you need to:
 
@@ -1268,7 +1268,7 @@ Lets look at `example_shinydashboard.R`
 
 Either alone are in small groups:
 
-- think about a Shiny application useful for your research or thah you would find interesting (e.g., power analysis for the t-test, plotting different prior distributions etc.)
+- think about a Shiny application useful for your research or that you would find interesting (e.g., power analysis for the *t*-test, plotting different prior distributions, simulating data from a model and user-defined parameters, etc.)
 
 - implement it ! 
 

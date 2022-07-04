@@ -22,15 +22,7 @@ ui <- fluidPage(
                         "Number of bins:",
                         min = 1,
                         max = 50,
-                        value = 30),
-            textInput(inputId = "ID",
-                      label   = "Please type your name here",
-                      value   = "", width = "100%",
-                      placeholder = "Hint: You can type here text"),
-            textAreaInput(inputId = "ID",
-                          label   = "Tell something about yourself",
-                          value   = "",
-                          rows    = 5)
+                        value = 30)
         ),
 
         # Show a plot of the generated distribution
